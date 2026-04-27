@@ -1,8 +1,12 @@
 import type { App, McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import styles from "../mcp-app.module.css";
 import type { PartialInput, Phase } from "./DocumentWriterApp.js";
+
+type ViewMode = "preview" | "edit";
 
 const FORMALITY_LABELS = ["Very casual", "Casual", "Neutral", "Formal", "Very formal"];
 const LENGTH_LABELS = ["Very brief", "Brief", "Medium", "Detailed", "Very detailed"];
@@ -44,6 +48,7 @@ export function DocumentWriterInner({
   const [instructions, setInstructions] = useState("");
   const [busy, setBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("preview");
 
   useEffect(() => {
     if (initial.document !== undefined) setDoc(initial.document);
@@ -67,41 +72,30 @@ export function DocumentWriterInner({
 
     const formalityLabel = FORMALITY_LABELS[formality - 1];
     const lengthLabel = LENGTH_LABELS[length - 1];
+    const docBody = doc.trim().length > 0 ? doc : "(empty — please draft a new document)";
 
-    const contextMd = [
-      `---`,
-      `target-formality: ${formalityLabel} (${formality}/5)`,
-      `target-length: ${lengthLabel} (${length}/5)`,
-      topic ? `topic: ${topic}` : null,
-      `---`,
+    const promptLines = [
+      `Rewrite the document below to be ${formalityLabel.toLowerCase()} in tone (${formality}/5) and ${lengthLabel.toLowerCase()} in length (${length}/5).`,
+      instructions.trim().length > 0
+        ? `Also apply these instructions: ${instructions.trim()}`
+        : null,
+      `Then call the \`write-document\` tool with the rewritten text in the \`document\` argument${topic ? ` and topic="${topic}"` : ""} so the UI can render the updated version. Do not paste the rewritten document into chat — return it through the tool call.`,
       "",
-      "## Current document",
+      topic ? `Topic: ${topic}` : null,
       "",
-      doc.trim().length > 0 ? doc : "(empty — please draft a new document)",
+      "Current document:",
       "",
-      instructions.trim().length > 0 ? `## User instructions\n\n${instructions}` : null,
-    ]
-      .filter((line) => line !== null)
-      .join("\n");
+      "```markdown",
+      docBody,
+      "```",
+    ].filter((line) => line !== null);
+
+    const prompt = promptLines.join("\n");
 
     try {
-      await app.updateModelContext({
-        content: [{ type: "text", text: contextMd }],
-      });
-
-      const promptParts = [
-        `Rewrite the document above to be ${formalityLabel.toLowerCase()} in tone and ${lengthLabel.toLowerCase()} in length.`,
-        instructions.trim().length > 0
-          ? `Also apply these user instructions: ${instructions.trim()}`
-          : null,
-        `Then call the \`write-document\` tool with the rewritten text in the \`document\` argument${topic ? ` and topic="${topic}"` : ""} so the UI can render the updated version. Do not paste the rewritten document into chat — return it through the tool call.`,
-      ]
-        .filter((p) => p !== null)
-        .join(" ");
-
       await app.sendMessage({
         role: "user",
-        content: [{ type: "text", text: promptParts }],
+        content: [{ type: "text", text: prompt }],
       });
 
       setStatusMessage("Asked the assistant to rewrite — the updated version will appear when ready.");
@@ -232,17 +226,60 @@ export function DocumentWriterInner({
           <>
             <header className={styles.documentHeader}>
               <h3>{displayTopic || "Untitled document"}</h3>
-              <span className={styles.docMeta}>
-                {displayDoc.length.toLocaleString()} chars
-              </span>
+              <div className={styles.documentHeaderRight}>
+                <span className={styles.docMeta}>
+                  {displayDoc.length.toLocaleString()} chars
+                </span>
+                <div className={styles.viewToggle} role="tablist" aria-label="Document view mode">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={viewMode === "preview"}
+                    className={
+                      viewMode === "preview"
+                        ? `${styles.viewToggleButton} ${styles.viewToggleButtonActive}`
+                        : styles.viewToggleButton
+                    }
+                    onClick={() => setViewMode("preview")}
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={viewMode === "edit"}
+                    className={
+                      viewMode === "edit"
+                        ? `${styles.viewToggleButton} ${styles.viewToggleButtonActive}`
+                        : styles.viewToggleButton
+                    }
+                    onClick={() => setViewMode("edit")}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
             </header>
-            <textarea
-              className={styles.documentText}
-              value={displayDoc}
-              onChange={(e) => setDoc(e.target.value)}
-              placeholder="Your document will appear here. Edit freely, or use the controls on the left to ask the assistant to rewrite."
-              spellCheck
-            />
+            {viewMode === "preview" ? (
+              <div className={styles.documentPreview}>
+                {displayDoc.trim().length > 0 ? (
+                  <Markdown remarkPlugins={[remarkGfm]}>{displayDoc}</Markdown>
+                ) : (
+                  <p className={styles.previewEmpty}>
+                    Your document will appear here. Use the controls on the left to ask
+                    the assistant to draft or rewrite, or switch to Edit to type directly.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <textarea
+                className={styles.documentText}
+                value={displayDoc}
+                onChange={(e) => setDoc(e.target.value)}
+                placeholder="Type your document in markdown. Switch back to Preview to render."
+                spellCheck
+              />
+            )}
           </>
         )}
       </section>

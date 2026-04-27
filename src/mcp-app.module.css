@@ -144,7 +144,7 @@
 
 .documentHeader {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--spacing-sm);
   padding-bottom: var(--spacing-sm);
@@ -158,11 +158,157 @@
   word-break: break-word;
 }
 
+.documentHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
 .docMeta {
   font-size: 0.75rem;
   color: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.viewToggle {
+  display: inline-flex;
+  border: var(--border-width-regular) solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+.viewToggleButton {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+}
+
+.viewToggleButton + .viewToggleButton {
+  border-left: var(--border-width-regular) solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+}
+
+.viewToggleButton:hover:not(.viewToggleButtonActive) {
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+}
+
+.viewToggleButtonActive {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.viewToggleButton:focus-visible {
+  outline: calc(var(--border-width-regular) * 2) solid var(--color-ring-primary);
+  outline-offset: -1px;
+}
+
+.documentPreview {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 360px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  overflow: auto;
+  border: var(--border-width-regular) solid color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-background-primary);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+.documentPreview > :first-child {
+  margin-top: 0;
+}
+
+.documentPreview > :last-child {
+  margin-bottom: 0;
+}
+
+.documentPreview h1,
+.documentPreview h2,
+.documentPreview h3,
+.documentPreview h4,
+.documentPreview h5,
+.documentPreview h6 {
+  margin: 1.5em 0 0.5em;
+  line-height: 1.25;
+}
+
+.documentPreview h1 { font-size: 1.75rem; }
+.documentPreview h2 { font-size: 1.4rem; }
+.documentPreview h3 { font-size: 1.15rem; }
+.documentPreview h4,
+.documentPreview h5,
+.documentPreview h6 { font-size: 1rem; }
+
+.documentPreview p,
+.documentPreview ul,
+.documentPreview ol,
+.documentPreview blockquote,
+.documentPreview pre,
+.documentPreview table {
+  margin: 0.75em 0;
+}
+
+.documentPreview ul,
+.documentPreview ol {
+  padding-left: 1.5em;
+}
+
+.documentPreview li + li {
+  margin-top: 0.25em;
+}
+
+.documentPreview blockquote {
+  padding-left: var(--spacing-md);
+  border-left: 3px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+  color: color-mix(in srgb, var(--color-text-primary) 80%, transparent);
+}
+
+.documentPreview code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  font-size: 0.9em;
+}
+
+.documentPreview pre {
+  padding: var(--spacing-sm) var(--spacing-md);
+  overflow: auto;
+  border-radius: var(--border-radius-md);
+  background-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+.documentPreview pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.documentPreview table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.documentPreview th,
+.documentPreview td {
+  padding: 0.4em 0.6em;
+  border: var(--border-width-regular) solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+  text-align: left;
+}
+
+.documentPreview a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.previewEmpty {
+  margin: 0;
+  color: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
+  font-style: italic;
 }
 
 .documentText {
