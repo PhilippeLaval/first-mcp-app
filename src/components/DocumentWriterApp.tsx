@@ -2,21 +2,21 @@ import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import { useApp } from "@modelcontextprotocol/ext-apps/react";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { useEffect, useState } from "react";
-import { GetTimeAppInner } from "./GetTimeAppInner.js";
+import { DocumentWriterInner } from "./DocumentWriterInner.js";
 
-export function GetTimeApp() {
+export function DocumentWriterApp() {
   const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
   const [hostContext, setHostContext] = useState<McpUiHostContext | undefined>();
 
   const { app, error } = useApp({
-    appInfo: { name: "First MCP App", version: "0.1.0" },
+    appInfo: { name: "Document Writer", version: "0.1.0" },
     capabilities: {},
     onAppCreated: (app) => {
       app.onteardown = async () => ({});
-      app.ontoolinput = async (input) => {
+      app.ontoolinput = (input) => {
         console.info("tool input:", input);
       };
-      app.ontoolresult = async (result) => {
+      app.ontoolresult = (result) => {
         setToolResult(result);
       };
       app.ontoolcancelled = (params) => {
@@ -34,7 +34,13 @@ export function GetTimeApp() {
   }, [app]);
 
   if (error) return <div><strong>ERROR:</strong> {error.message}</div>;
-  if (!app) return <div>Connecting...</div>;
+  if (!app) return <div>Connecting…</div>;
 
-  return <GetTimeAppInner app={app} toolResult={toolResult} hostContext={hostContext} />;
+  return (
+    <DocumentWriterInner
+      app={app}
+      toolResult={toolResult}
+      hostContext={hostContext}
+    />
+  );
 }

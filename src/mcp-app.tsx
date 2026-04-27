@@ -1,9 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { GetTimeApp } from "./components/GetTimeApp.js";
+import { DocumentWriterApp } from "./components/DocumentWriterApp.js";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <GetTimeApp />
+    <DocumentWriterApp />
   </StrictMode>,
 );
