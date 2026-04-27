@@ -71,3 +71,24 @@ export const SendMessageFails: Story = {
     },
   },
 };
+
+export const StreamingEmpty: Story = {
+  args: {
+    app: mockApp(),
+    toolResult: null,
+    phase: "streaming",
+    partialInput: { topic: "Quarterly update" },
+  },
+};
+
+export const StreamingPartial: Story = {
+  args: {
+    app: mockApp(),
+    toolResult: null,
+    phase: "streaming",
+    partialInput: {
+      topic: "Quarterly update",
+      document: "# Quarterly update\n\nWe had a strong quarter overall. Revenue grew 14% and",
+    },
+  },
+};

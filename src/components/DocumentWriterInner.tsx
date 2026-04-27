@@ -2,6 +2,7 @@ import type { App, McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "../mcp-app.module.css";
+import type { PartialInput, Phase } from "./DocumentWriterApp.js";
 
 const FORMALITY_LABELS = ["Very casual", "Casual", "Neutral", "Formal", "Very formal"];
 const LENGTH_LABELS = ["Very brief", "Brief", "Medium", "Detailed", "Very detailed"];
@@ -22,12 +23,16 @@ function readStructured(result: CallToolResult | null): ToolStructured {
 export interface DocumentWriterInnerProps {
   app: App;
   toolResult: CallToolResult | null;
+  partialInput?: PartialInput | null;
+  phase?: Phase;
   hostContext?: McpUiHostContext;
 }
 
 export function DocumentWriterInner({
   app,
   toolResult,
+  partialInput,
+  phase = "settled",
   hostContext,
 }: DocumentWriterInnerProps) {
   const initial = useMemo(() => readStructured(toolResult), [toolResult]);
@@ -46,8 +51,17 @@ export function DocumentWriterInner({
     setBusy(false);
   }, [initial.document, initial.topic]);
 
+  const awaitingFirstResult = phase === "streaming" && !toolResult;
+  const isLoading = awaitingFirstResult || busy;
+  const streamingDoc = partialInput?.document ?? "";
+  const streamingTopic = partialInput?.topic;
+  const hasStreamPreview = awaitingFirstResult && streamingDoc.length > 0;
+
+  const displayDoc = awaitingFirstResult ? streamingDoc : doc;
+  const displayTopic = awaitingFirstResult ? (streamingTopic ?? topic) : topic;
+
   const handleApply = useCallback(async () => {
-    if (busy) return;
+    if (isLoading) return;
     setBusy(true);
     setStatusMessage(null);
 
@@ -96,7 +110,9 @@ export function DocumentWriterInner({
       setStatusMessage(`Failed to send rewrite request: ${msg}`);
       setBusy(false);
     }
-  }, [app, busy, doc, formality, instructions, length, topic]);
+  }, [app, doc, formality, instructions, isLoading, length, topic]);
+
+  const controlsDisabled = isLoading;
 
   return (
     <main
@@ -123,6 +139,7 @@ export function DocumentWriterInner({
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="What is this document about?"
+            disabled={controlsDisabled}
           />
         </label>
 
@@ -138,6 +155,7 @@ export function DocumentWriterInner({
             step={1}
             value={formality}
             onChange={(e) => setFormality(Number(e.target.value))}
+            disabled={controlsDisabled}
           />
           <div className={styles.sliderTicks}>
             <span>casual</span>
@@ -157,6 +175,7 @@ export function DocumentWriterInner({
             step={1}
             value={length}
             onChange={(e) => setLength(Number(e.target.value))}
+            disabled={controlsDisabled}
           />
           <div className={styles.sliderTicks}>
             <span>shorter</span>
@@ -171,6 +190,7 @@ export function DocumentWriterInner({
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             placeholder="e.g. focus on Q3 results, drop the marketing fluff, add a call to action…"
+            disabled={controlsDisabled}
           />
         </label>
 
@@ -178,26 +198,53 @@ export function DocumentWriterInner({
           type="button"
           className={styles.primaryButton}
           onClick={handleApply}
-          disabled={busy}
+          disabled={isLoading}
         >
-          {busy ? "Rewriting…" : "Apply changes"}
+          {awaitingFirstResult
+            ? "Generating…"
+            : busy
+              ? "Sending…"
+              : "Apply changes"}
         </button>
 
         {statusMessage && <p className={styles.status}>{statusMessage}</p>}
       </aside>
 
       <section className={styles.documentPane}>
-        <header className={styles.documentHeader}>
-          <h3>{topic || "Untitled document"}</h3>
-          <span className={styles.docMeta}>{doc.length.toLocaleString()} chars</span>
-        </header>
-        <textarea
-          className={styles.documentText}
-          value={doc}
-          onChange={(e) => setDoc(e.target.value)}
-          placeholder="Your document will appear here. Edit freely, or use the controls on the left to ask the assistant to rewrite."
-          spellCheck
-        />
+        {isLoading ? (
+          <div className={styles.documentLoading} role="status" aria-live="polite">
+            <span className={styles.spinnerXl} aria-hidden="true" />
+            <p className={styles.loadingTitle}>
+              {awaitingFirstResult
+                ? "Drafting your document…"
+                : "Sending your request…"}
+            </p>
+            <p className={styles.loadingSubtitle}>
+              {awaitingFirstResult
+                ? "The assistant is composing the rewritten version."
+                : "Asking the assistant to rewrite — the new version will appear here."}
+            </p>
+            {hasStreamPreview && (
+              <pre className={styles.streamPreview}>{streamingDoc}</pre>
+            )}
+          </div>
+        ) : (
+          <>
+            <header className={styles.documentHeader}>
+              <h3>{displayTopic || "Untitled document"}</h3>
+              <span className={styles.docMeta}>
+                {displayDoc.length.toLocaleString()} chars
+              </span>
+            </header>
+            <textarea
+              className={styles.documentText}
+              value={displayDoc}
+              onChange={(e) => setDoc(e.target.value)}
+              placeholder="Your document will appear here. Edit freely, or use the controls on the left to ask the assistant to rewrite."
+              spellCheck
+            />
+          </>
+        )}
       </section>
     </main>
   );
