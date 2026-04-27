@@ -1,0 +1,54 @@
+{
+  "name": "first-mcp-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A first MCP App built with TypeScript + Vite + React + Storybook",
+  "main": "dist/server.js",
+  "bin": {
+    "first-mcp-app": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && cross-env INPUT=mcp-app.html vite build && tsc -p tsconfig.server.json && bun build server.ts --outdir dist --target node && bun build main.ts --outfile dist/index.js --target node --external \"./server.js\" --banner \"#!/usr/bin/env node\"",
+    "watch": "cross-env INPUT=mcp-app.html vite build --watch",
+    "serve": "bun --watch main.ts",
+    "serve:stdio": "bun main.ts --stdio",
+    "start": "cross-env NODE_ENV=development npm run build && npm run serve",
+    "start:stdio": "cross-env NODE_ENV=development npm run build 1>&2 && npm run serve:stdio",
+    "dev": "cross-env NODE_ENV=development concurrently -n vite,server -c blue,green \"npm run watch\" \"npm run serve\"",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "inspect": "npx -y @modelcontextprotocol/inspector node dist/index.js --stdio",
+    "inspect:http": "npx -y @modelcontextprotocol/inspector",
+    "tunnel": "tailscale funnel --bg 3001",
+    "tunnel:status": "tailscale funnel status",
+    "tunnel:stop": "tailscale funnel --bg=false 3001 || tailscale funnel reset",
+    "tunnel:ngrok": "ngrok http 3001",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@storybook/addon-essentials": "^8.4.7",
+    "@storybook/react-vite": "^8.4.7",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.0",
+    "@types/node": "22.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "storybook": "^8.4.7",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.0",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}
